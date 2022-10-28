@@ -1,10 +1,10 @@
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, FlatList, Dimensions } from 'react-native'
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, FlatList, Dimensions, Image } from 'react-native'
 import React, { useEffect, useState, FC, useRef } from 'react'
 import { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { NavigationParamsList } from '../../routes/navigationParamsList'
 import Api from '../../utils/Api'
 import dayjs from 'dayjs'
-import { PlusIcon, Recyclebin } from '../../assets'
+import { ActivityEmptyState, PlusIcon, Recyclebin } from '../../assets'
 import { EMAIL } from '../../utils/config'
 import { AlertActivity, DeleteModal } from '../../components'
 import { ToastHandler } from '../../components/AlertActivity/AlertActivityProps'
@@ -126,6 +126,17 @@ const Dashboard:FC<NativeStackScreenProps<NavigationParamsList,'DashboardScreen'
   </View>
   )
 
+  const emtyActivity = () => (
+    <View
+      style={styles.activityEmptyState}
+      accessibilityLabel='activity-empty-state'>
+      <Image 
+        source={ActivityEmptyState}
+        style={styles.activityEmptyStateImage}/>
+      <Text style={styles.activityEmptyStateText}>Buat activity pertamamu</Text>
+    </View>
+  )
+
   return (
     <View style={styles.container}>
         <FlatList
@@ -133,6 +144,7 @@ const Dashboard:FC<NativeStackScreenProps<NavigationParamsList,'DashboardScreen'
           data={items}
           ListHeaderComponent={renderHeader}
           renderItem={renderItem}
+          ListEmptyComponent={emtyActivity}
           numColumns={2}
           contentContainerStyle={{paddingBottom:20,paddingHorizontal:20}}
           columnWrapperStyle={styles.activityContainer}
@@ -217,5 +229,20 @@ const styles = StyleSheet.create({
   activityItemDate:{
     fontFamily:'Poppins-Regular',
     fontSize:10
+  },
+  activityEmptyState:{
+    flex:1,
+    justifyContent:'center',
+    alignItems:'center'
+  },
+  activityEmptyStateImage:{
+    resizeMode:'contain',
+    width:'100%'
+  },
+  activityEmptyStateText:{
+    fontWeight:'600',
+    fontFamily:'Poppins-Regular',
+    fontSize:16,
+    color:'#555555'
   }
 })
