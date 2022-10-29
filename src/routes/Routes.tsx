@@ -1,6 +1,6 @@
 import { StyleSheet, View } from 'react-native'
 import React from 'react'
-import { createStackNavigator } from '@react-navigation/stack'
+import { CardStyleInterpolators, createStackNavigator } from '@react-navigation/stack'
 import { NavigationParamsList } from './navigationParamsList'
 import * as Screens from '../screens'
 const Stack =  createStackNavigator<NavigationParamsList>()
@@ -23,7 +23,8 @@ const Routes = () => {
                 name="ItemListScreen" 
                 component={Screens.ItemListScreen} 
                 options={{
-                    title:'NEW ACTIVITY'
+                    title:'New Activity',
+                    cardStyleInterpolator: CardStyleInterpolators.forHorizontalIOS
                 }}/>
         </Stack.Navigator>
     )

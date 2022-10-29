@@ -6,7 +6,7 @@ import Api from '../../utils/Api'
 import dayjs from 'dayjs'
 import { ActivityEmptyState, PlusIcon, Recyclebin } from '../../assets'
 import { EMAIL } from '../../utils/config'
-import { AlertActivity, DeleteModal } from '../../components'
+import { AddButton, AlertActivity, DeleteModal } from '../../components'
 import { ToastHandler } from '../../components/AlertActivity/AlertActivityProps'
 const {width,height} = Dimensions.get('window')
 
@@ -22,7 +22,7 @@ type AlertModal = {
 }
 
 const Dashboard:FC<NativeStackScreenProps<NavigationParamsList,'DashboardScreen'>> 
-= ({route,navigation}) => {
+= ({navigation}) => {
 
   const toast = useRef<any>()
   const [items, setItems] = useState<ItemType[]>([])
@@ -81,6 +81,18 @@ const Dashboard:FC<NativeStackScreenProps<NavigationParamsList,'DashboardScreen'
     }
   }
   
+  const onGetDetailActivity = async (id:number) => {
+    try {    
+      const axios = await Api()
+      const request = await axios.get(`/activity-groups/${id}`)
+      console.log(request.status);   
+      if (request.status === 200) {
+        navigation.navigate('ItemListScreen',{activity:request.data})
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  }
 
   useEffect(() => {
     getActivityt()
@@ -91,6 +103,7 @@ const Dashboard:FC<NativeStackScreenProps<NavigationParamsList,'DashboardScreen'
   
   const renderItem = ({item,index}:{item:ItemType,index:number}) => (
     <TouchableOpacity
+      onPress={()=>onGetDetailActivity(item.id)}
       style={styles.activityItem}
       accessibilityLabel="activity-item">
         <Text 
@@ -111,22 +124,18 @@ const Dashboard:FC<NativeStackScreenProps<NavigationParamsList,'DashboardScreen'
       </TouchableOpacity> 
   )
 
-  const renderHeader = () => (
+  const RenderHeader = () => (
     <View style={styles.activityHeaderContainer}>
       <Text 
         style={styles.activityTitle}
         accessibilityLabel='activity-title'>Activity</Text>
-      <TouchableOpacity 
-        accessibilityLabel='activity-add-button'
+      <AddButton 
         onPress={onAddNewActivity}
-        style={styles.activityAddButton}>
-        <PlusIcon/>
-        <Text style={styles.textActivityAddButton}>Tambah</Text>
-      </TouchableOpacity>
+        accessibilityLabel='activity-add-button'/>
   </View>
   )
 
-  const emtyActivity = () => (
+  const EmtyComponent = () => (
     <View
       style={styles.activityEmptyState}
       accessibilityLabel='activity-empty-state'>
@@ -142,15 +151,15 @@ const Dashboard:FC<NativeStackScreenProps<NavigationParamsList,'DashboardScreen'
         <FlatList
           key={";istActivity"}
           data={items}
-          ListHeaderComponent={renderHeader}
+          ListHeaderComponent={RenderHeader}
           renderItem={renderItem}
-          ListEmptyComponent={emtyActivity}
+          ListEmptyComponent={EmtyComponent}
           numColumns={2}
           contentContainerStyle={{paddingBottom:20,paddingHorizontal:20}}
           columnWrapperStyle={styles.activityContainer}
           keyExtractor={(item)=>item.id.toString()}
         />
-        <AlertActivity ref={toast} />
+        <AlertActivity ref={toast} duration={800}/>
         <DeleteModal 
           accessibilityLabel='delete-activity'
           onCancel={()=>setModalDelete(state=>({visible:false}))}
@@ -180,22 +189,6 @@ const styles = StyleSheet.create({
     fontWeight:'700',
     fontFamily:'Poppins-Regular',
     color:'#111111'
-  },
-  activityAddButton:{
-    paddingHorizontal:14,
-    paddingVertical:13,
-    backgroundColor:'#16ABF8',
-    borderRadius:45,
-    flexDirection:'row',
-    justifyContent:'space-between',
-    alignItems:'center'
-  },
-  textActivityAddButton:{
-    fontFamily:'Poppins-Regular',
-    fontSize:12,
-    color:'#FFFFFF',
-    fontWeight:'600',
-    marginLeft:8.5
   },
   activityContainer:{
     justifyContent:'space-between',    

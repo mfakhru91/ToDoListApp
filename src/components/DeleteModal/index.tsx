@@ -54,6 +54,14 @@ const styles = StyleSheet.create({
         justifyContent:'center',
         alignItems:'center',
         paddingHorizontal:20,
+    },
+    cardContainer:{
+        justifyContent:'center',
+        alignItems:'center',
+        backgroundColor:'#FFFFFF',
+        paddingHorizontal:38,
+        paddingVertical:36,
+        borderRadius:12,
         shadowColor: "#000",
         shadowOffset: {
           width: 0,
@@ -62,15 +70,7 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.25,
         shadowRadius: 3.84,
 
-        elevation: 5,
-    },
-    cardContainer:{
-        justifyContent:'center',
-        alignItems:'center',
-        backgroundColor:'#FFFFFF',
-        paddingHorizontal:38,
-        paddingVertical:36,
-        borderRadius:12,    
+        elevation: 5,    
     },
     modalDeleteTitle:{
         fontFamily:'Poppins-Regular',

@@ -6,7 +6,7 @@ import { ModalInformationIcon } from '../../assets'
 const index = forwardRef<ToastHandler,AlertActivityProps>(
   (props,ref)=>{
     const {duration = 3000} = props
-    const [visible, setVisible] = useState(true)
+    const [visible, setVisible] = useState(false)
     const [title, setTitle] = useState('')
 
     useImperativeHandle(ref,()=>({
