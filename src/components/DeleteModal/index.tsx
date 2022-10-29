@@ -1,8 +1,8 @@
-import { Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
+import { Dimensions, Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
 import React from 'react'
 import { DeleteModalProps } from './DeleteModalProps'
 import { ModalDeleteIcon } from '../../assets'
-
+const {width,height} = Dimensions.get('window')
 const index = (props:DeleteModalProps) => {
 
     const Title = () => {

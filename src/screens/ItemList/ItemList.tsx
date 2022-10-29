@@ -3,8 +3,21 @@ import React, { FC, useEffect, useRef, useState } from 'react'
 import { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { NavigationParamsList } from '../../routes/navigationParamsList'
 import EditIcon from '../../assets/icons/EditIcon'
-import { AddButton } from '../../components'
-import { TodoEmptyState } from '../../assets'
+import { AddButton, AlertActivity, DeleteModal, ModalAdd } from '../../components'
+import { Recyclebin, TodoEditButtonImage, TodoEmptyState } from '../../assets'
+import CheckBox from '@react-native-community/checkbox'
+import Api from '../../utils/Api'
+import { act } from 'react-test-renderer'
+
+type TodoItemType =  {
+  "is_active": number
+  "priority": 'very-high'|'high'|'normal'|'low'|'very-low',
+  "created_at": string
+  "updated_at": string
+  "id": number
+  "activity_group_id": number,
+  "title": string
+}
 
 const ItemList:FC<NativeStackScreenProps<NavigationParamsList,'ItemListScreen'>> 
 = ({route}) => {
@@ -12,12 +25,102 @@ const ItemList:FC<NativeStackScreenProps<NavigationParamsList,'ItemListScreen'>>
   const [isTitleEditable, setIsTitleEditable] = useState(false)  
   const [activityTitle, setActivityTitle] = useState(activity.title)
   const [todoItem, setTodoItem] = useState<any[]>(activity.todo_items)
+  const [modalDelete, setModalDelete] = useState<{visible:boolean,item?:TodoItemType}>({
+    visible:false
+  })
+  const toast = useRef<any>()
 
-  const RenderItem = () => (
-    <View 
-      style={styles.todoItemStyle}>
-    </View>
-  )
+  const indicatorColor = {
+    'very-high':'#ED4C5C',
+    'high':'#F8A541',
+    'normal':'#00A790',
+    'low':'#428BC1',
+    'very-low':'#8942C1'
+  }
+  
+  const onChangeTodoCheckBox = async (item:TodoItemType,index:number) => { 
+      try {
+          const axios = await Api()
+          const formData = {
+              "title": item.title,
+              "is_active": item.is_active == 1?0:1,
+              "priority": item.priority,
+          }
+          const request = await axios.patch(`/todo-items/${item.id}`,formData)
+          if (request.status === 200) {
+            const itemsTodo = [...todoItem]
+            itemsTodo[index] = request.data
+            setTodoItem(itemsTodo)
+          }
+      } catch (error) {
+          console.log(error);
+      }
+  }
+
+  const onGetTodoItem = async () => {
+    try {
+        const axios = await Api()
+        const request = await axios.get(`todo-items?activity_group_id=${activity.id}`)
+        console.log(request.data);
+        if (request.status === 200) {
+            setTodoItem(request.data.data)
+        }
+    } catch (error) {
+        console.log(error);
+    }
+  }
+
+  const onDeleteItem = async () => { 
+    try {    
+      const axios = await Api()
+      const request = await axios.delete(`/todo-items/${modalDelete.item?.id}`)       
+      if (request.status === 200) {
+        toast.current.setModalVisible('Activity berhasil dihapus')
+        setModalDelete(state=>({visible:false}))  
+        onGetTodoItem()
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  }
+
+  const RenderItem = ({item,index}:{item:TodoItemType,index:any}) => {    
+    return(
+      <View 
+          accessibilityLabel='todo-item'
+          style={styles.todoItemStyle}>
+          <View style={{flexDirection:'row',alignItems:'center',flex:1}}>
+              <CheckBox
+                  accessibilityLabel='todo-item-checkbox'
+                  disabled={false}
+                  tintColors={{'true':'#16ABF8','false':'#C7C7C7'}}
+                  tintColor='#16ABF8'
+                  onFillColor='#C7C7C7'
+                  onChange={()=>onChangeTodoCheckBox(item,index)}
+                  value={item.is_active == 0} />
+              <View
+                  style={[styles.todoItemPriorityIndicator,{backgroundColor:indicatorColor[item.priority]}]}
+                  accessibilityLabel='todo-item-priority-indicator'/>
+              <Text
+                accessibilityLabel='todo-item-title' 
+                style={[
+                        styles.todoItemTitle,
+                        {textDecorationLine:item.is_active === 0?'line-through':'none',
+                        color:item.is_active === 1?'#111111':'#888888'}]}>{item.title}</Text>
+              <TouchableOpacity
+                accessibilityLabel='todo-item-edit-button'>
+                  <Image source={TodoEditButtonImage} />
+              </TouchableOpacity>
+          </View>
+          <TouchableOpacity
+            accessibilityLabel='todo-item-delete-button'
+            onPress={()=>setModalDelete({visible:true,item})}>
+              <Recyclebin/>
+          </TouchableOpacity>
+      </View>
+    )
+  }
+  
 
   const HeaderComponent = () => (
     <View>
@@ -70,6 +173,15 @@ const ItemList:FC<NativeStackScreenProps<NavigationParamsList,'ItemListScreen'>>
         renderItem={RenderItem}
         ListHeaderComponent={HeaderComponent}
         ListEmptyComponent={EmtyComponent}/>
+
+      <AlertActivity ref={toast} duration={800}/>
+      <ModalAdd visible={true} type='add' onClose={()=>{}}/>
+      <DeleteModal
+          accessibilityLabel='delete-list-item'
+          onCancel={()=>setModalDelete(state=>({visible:false}))}
+          onDelete={onDeleteItem}
+          visible={modalDelete?.visible}
+          title={`Apakah anda yakin menghapus List Item (“${modalDelete?.item?.title}”?)`}/>
 
     </View>
   )
@@ -127,14 +239,27 @@ const styles = StyleSheet.create({
     paddingVertical:22,
     paddingHorizontal:19, 
     marginBottom:20,
+    flexDirection:'row',
+    alignItems:'center',
     shadowColor: "#00000090",
     shadowOffset: {
-      width: 0,
-      height: 1,
+        width: 0,
+        height: 1,
     },
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
 
     elevation: 5,
-  }
+},
+todoItemPriorityIndicator:{
+    height:5,
+    width:5, 
+    borderRadius:5,
+    marginHorizontal:14,
+},
+todoItemTitle:{
+    fontFamily:'Poppins-Medium',
+    color:'#111111',
+    marginRight:8,
+}
 })
