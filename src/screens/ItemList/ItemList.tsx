@@ -19,6 +19,13 @@ type TodoItemType =  {
   "title": string
 }
 
+type itemModalActionType = {
+  visible:boolean
+  type:'add'|'update'
+  activityId?:number
+  itemUpdate?:TodoItemType,
+}
+
 const ItemList:FC<NativeStackScreenProps<NavigationParamsList,'ItemListScreen'>> 
 = ({route}) => {
   const {activity} = route.params
@@ -27,6 +34,10 @@ const ItemList:FC<NativeStackScreenProps<NavigationParamsList,'ItemListScreen'>>
   const [todoItem, setTodoItem] = useState<any[]>(activity.todo_items)
   const [modalDelete, setModalDelete] = useState<{visible:boolean,item?:TodoItemType}>({
     visible:false
+  })
+  const [onShowItemModalAction, setOnShowItemModalAction] = useState<itemModalActionType>({
+    visible:false,
+    type:'add'
   })
   const toast = useRef<any>()
 
@@ -84,6 +95,63 @@ const ItemList:FC<NativeStackScreenProps<NavigationParamsList,'ItemListScreen'>>
     }
   }
 
+  const onAddNewItem = () => { 
+    setOnShowItemModalAction({
+      visible:true,
+      type:'add',
+      activityId:activity.id
+    })
+  }
+
+  const onCreateSuccess = (item:TodoItemType) => {
+    const itemTodo = [...todoItem]
+    itemTodo.push(item)
+    setTodoItem(itemTodo)
+    setOnShowItemModalAction({
+      visible:false,
+      type:'add',
+    })
+  }
+
+  const onUpdateSuccess = async (item:TodoItemType) => { 
+    const itemTodo = [...todoItem]
+    for (let index = 0; index < itemTodo.length; index++) {
+      if (itemTodo[index].id == item.id) {
+        itemTodo[index] = item
+      }
+    }
+    setTodoItem(itemTodo)
+    setOnShowItemModalAction({
+      visible:false,
+      type:'add',
+    })
+  }
+
+  const onUpdateItem = (item:TodoItemType) => {
+    setOnShowItemModalAction({
+      visible:true,
+      type:'update',
+      itemUpdate:item
+    })
+  }
+
+  const onUpdateActivity = async () => {
+    try {    
+      const axios = await Api()
+      const formData = {
+        "title": activityTitle
+      }
+      const request = await axios.patch(`/activity-groups/${activity.id}`,formData)
+      console.log(request.data);   
+      if (request.status === 200) {
+        setIsTitleEditable(false)
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  }
+  
+
   const RenderItem = ({item,index}:{item:TodoItemType,index:any}) => {    
     return(
       <View 
@@ -108,6 +176,7 @@ const ItemList:FC<NativeStackScreenProps<NavigationParamsList,'ItemListScreen'>>
                         {textDecorationLine:item.is_active === 0?'line-through':'none',
                         color:item.is_active === 1?'#111111':'#888888'}]}>{item.title}</Text>
               <TouchableOpacity
+                onPress={()=>onUpdateItem(item)}
                 accessibilityLabel='todo-item-edit-button'>
                   <Image source={TodoEditButtonImage} />
               </TouchableOpacity>
@@ -124,29 +193,9 @@ const ItemList:FC<NativeStackScreenProps<NavigationParamsList,'ItemListScreen'>>
 
   const HeaderComponent = () => (
     <View>
-      <View style={[styles.header,{borderBottomWidth:isTitleEditable?1:0}]}>
-          {isTitleEditable?(
-            <TextInput
-              accessibilityLabel='activity-title' 
-              autoFocus
-              style={[styles.activityTitleInput,styles.activityTitleText]}               
-              value={activityTitle}/>
-          ):(
-            <View
-              accessibilityLabel='activity-title'
-              style={styles.activityTitleInput} >
-              <Text style={styles.activityTitleText}>{activityTitle}</Text>
-            </View>
-          )}
-          <TouchableOpacity
-            accessibilityLabel='todo-title-edit-button'
-            onPress={()=>setIsTitleEditable(!isTitleEditable)}>
-            <EditIcon/>
-          </TouchableOpacity>
-      </View>
-
       <View style={styles.actionContainer}>
           <AddButton 
+            onPress={onAddNewItem}
             disabled={todoItem.length === 10}
             accessibilityLabel='activity-add-button'/>
       </View>
@@ -166,6 +215,28 @@ const ItemList:FC<NativeStackScreenProps<NavigationParamsList,'ItemListScreen'>>
 
   return (
     <View style={styles.container}>
+        <View style={[styles.header,{borderBottomWidth:isTitleEditable?1:0}]}>
+          {isTitleEditable?(
+            <TextInput
+              accessibilityLabel='activity-title' 
+              autoFocus
+              onChangeText={(text)=>setActivityTitle(text)}
+              onEndEditing={onUpdateActivity}
+              style={[styles.activityTitleInput,styles.activityTitleText]}               
+              value={activityTitle}/>
+          ):(
+            <View
+              accessibilityLabel='activity-title'
+              style={styles.activityTitleInput} >
+              <Text style={styles.activityTitleText}>{activityTitle}</Text>
+            </View>
+          )}
+          <TouchableOpacity
+            accessibilityLabel='todo-title-edit-button'
+            onPress={()=>setIsTitleEditable(!isTitleEditable)}>
+            <EditIcon/>
+          </TouchableOpacity>
+      </View>
 
       <FlatList
         contentContainerStyle={{flex:1,paddingHorizontal:20,}} 
@@ -175,7 +246,16 @@ const ItemList:FC<NativeStackScreenProps<NavigationParamsList,'ItemListScreen'>>
         ListEmptyComponent={EmtyComponent}/>
 
       <AlertActivity ref={toast} duration={800}/>
-      <ModalAdd visible={true} type='add' onClose={()=>{}}/>
+
+      <ModalAdd 
+        visible={onShowItemModalAction.visible} 
+        type={onShowItemModalAction.type}
+        activityId={onShowItemModalAction.activityId}
+        itemUpadate={onShowItemModalAction.itemUpdate}
+        onClose={()=>{setOnShowItemModalAction(state=>({...state,visible:false}))}}
+        onCreateSuccess={(item)=>onCreateSuccess(item)}
+        onUpdateSuccess={(item)=>onUpdateSuccess(item)}/>
+
       <DeleteModal
           accessibilityLabel='delete-list-item'
           onCancel={()=>setModalDelete(state=>({visible:false}))}
@@ -198,7 +278,8 @@ const styles = StyleSheet.create({
   header:{
     borderColor:"#D8D8D8",
     flexDirection:'row',
-    alignItems:'center'
+    alignItems:'center',
+    marginHorizontal:20,
   },
   activityTitleInput:{
     flex:1,

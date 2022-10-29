@@ -95,8 +95,8 @@ const Dashboard:FC<NativeStackScreenProps<NavigationParamsList,'DashboardScreen'
   }
 
   useEffect(() => {
-    getActivityt()
     const unsubscribe = navigation.addListener('focus', async () => {
+      getActivityt()
     });
     return unsubscribe;
   }, [])
