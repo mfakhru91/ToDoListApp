@@ -223,12 +223,11 @@ const styles = StyleSheet.create({
         color:'#111111'
     },
     dropDownContainerStyle:{
-        borderColor:'#E5E5E5'
+        borderColor:'#E5E5E5',
     },
     listItemContainerStyle:{
         borderWidth:1,
         borderColor:'#E5E5E5',
-        height:52
     },
     modalFooter:{
         paddingVertical:18,
@@ -236,7 +235,8 @@ const styles = StyleSheet.create({
         alignItems:'flex-end',
         justifyContent:'center',
         borderTopWidth:1,
-        borderColor:'#E5E5E5'
+        borderColor:'#E5E5E5',
+        zIndex:-1
     },
     modalSaveButton:{
         width:150,

@@ -1,8 +1,9 @@
-import { StyleSheet, View } from 'react-native'
+import { Image, StyleSheet, TouchableOpacity, View } from 'react-native'
 import React from 'react'
 import { CardStyleInterpolators, createStackNavigator } from '@react-navigation/stack'
 import { NavigationParamsList } from './navigationParamsList'
 import * as Screens from '../screens'
+import { todoBackButton } from '../assets'
 const Stack =  createStackNavigator<NavigationParamsList>()
 
 const Routes = () => {
@@ -11,7 +12,7 @@ const Routes = () => {
         <Stack.Navigator
             screenOptions={{
                 headerStyle:styles.HeaderStyle,
-                headerTitleStyle:styles.HeaderTitleStyle
+                headerTitleStyle:styles.HeaderTitleStyle,
             }}>
             <Stack.Screen 
                 name="DashboardScreen" 
@@ -22,10 +23,15 @@ const Routes = () => {
             <Stack.Screen 
                 name="ItemListScreen" 
                 component={Screens.ItemListScreen} 
-                options={{
+                options={({navigation})=>({
                     title:'New Activity',
-                    cardStyleInterpolator: CardStyleInterpolators.forHorizontalIOS
-                }}/>
+                    cardStyleInterpolator: CardStyleInterpolators.forFadeFromCenter,
+                    headerLeft:()=>(
+                        <TouchableOpacity 
+                            onPress={()=>navigation.goBack()}
+                            style={styles.backButton}><Image source={todoBackButton}/></TouchableOpacity>
+                    )
+                })}/>
         </Stack.Navigator>
     )
 }
@@ -42,5 +48,8 @@ const styles = StyleSheet.create({
         fontFamily:'Poppins-Regular',
         fontWeight:'700',
         fontSize:18
+    },
+    backButton:{
+        marginLeft:20
     }
 })

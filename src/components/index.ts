@@ -6,5 +6,5 @@ export {
     DeleteModal,
     AlertActivity,
     AddButton,
-    ModalAdd
+    ModalAdd,
 }

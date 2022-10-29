@@ -1,13 +1,14 @@
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, TextInputProps, FlatList, Image } from 'react-native'
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, FlatList, Image, Dimensions } from 'react-native'
 import React, { FC, useEffect, useRef, useState } from 'react'
 import { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { NavigationParamsList } from '../../routes/navigationParamsList'
 import EditIcon from '../../assets/icons/EditIcon'
 import { AddButton, AlertActivity, DeleteModal, ModalAdd } from '../../components'
-import { Recyclebin, TodoEditButtonImage, TodoEmptyState } from '../../assets'
+import { ArraowsSort, Recyclebin, sortAzIcon, sortLastedIcon, sortnotFinishedYetIcon, sortOldestIcon, sortSelectedIcon, sortZaIcon, TodoEditButtonImage, TodoEmptyState } from '../../assets'
 import CheckBox from '@react-native-community/checkbox'
 import Api from '../../utils/Api'
-import { act } from 'react-test-renderer'
+
+const {width,height} = Dimensions.get('window')
 
 type TodoItemType =  {
   "is_active": number
@@ -32,6 +33,7 @@ const ItemList:FC<NativeStackScreenProps<NavigationParamsList,'ItemListScreen'>>
   const [isTitleEditable, setIsTitleEditable] = useState(false)  
   const [activityTitle, setActivityTitle] = useState(activity.title)
   const [todoItem, setTodoItem] = useState<any[]>(activity.todo_items)
+  const [sortItemVisible, setSortItemVisible] = useState(false)
   const [modalDelete, setModalDelete] = useState<{visible:boolean,item?:TodoItemType}>({
     visible:false
   })
@@ -39,6 +41,7 @@ const ItemList:FC<NativeStackScreenProps<NavigationParamsList,'ItemListScreen'>>
     visible:false,
     type:'add'
   })
+  const [sortSelected, setSortSelected] = useState('')
   const toast = useRef<any>()
 
   const indicatorColor = {
@@ -151,6 +154,48 @@ const ItemList:FC<NativeStackScreenProps<NavigationParamsList,'ItemListScreen'>>
     }
   }
   
+  const onShortItem = async (params:string) => {
+    setSortSelected(params)
+    const itemTodo = [...todoItem]
+    if (params === 'latest') {
+      const item = await itemTodo.sort((a,b)=>{
+        return b.id - a.id
+      })
+      setTodoItem(item)
+      setSortItemVisible(false)
+    }else if(params === 'oldest'){
+      const item = await itemTodo.sort((a,b)=>{
+        return a.id - b.id 
+      })
+      setTodoItem(item)
+      setSortItemVisible(false)      
+    }else if(params === 'a-z'){
+      const item = await itemTodo.sort((a,b):any=>{
+        if (a.title < b.title) {
+          return -1
+        }
+      })
+      setTodoItem(item)
+      setSortItemVisible(false)      
+    }else if(params === 'z-a'){
+      const item = await itemTodo.sort((a,b):any=>{
+        if (b.title < a.title) {
+          return -1
+        }
+      })
+      setTodoItem(item)
+      setSortItemVisible(false)      
+    }
+    else if(params === 'not_finished_yet'){
+      const item = await itemTodo.sort((a,b):any=>{
+        if (a.is_active != 1 && b.is_active == 1) {
+          return -1
+        }
+      })
+      setTodoItem(item)
+      setSortItemVisible(false)      
+    }
+  }
 
   const RenderItem = ({item,index}:{item:TodoItemType,index:any}) => {    
     return(
@@ -189,18 +234,6 @@ const ItemList:FC<NativeStackScreenProps<NavigationParamsList,'ItemListScreen'>>
       </View>
     )
   }
-  
-
-  const HeaderComponent = () => (
-    <View>
-      <View style={styles.actionContainer}>
-          <AddButton 
-            onPress={onAddNewItem}
-            disabled={todoItem.length === 10}
-            accessibilityLabel='activity-add-button'/>
-      </View>
-    </View>
-  )
 
   const EmtyComponent = () => (
     <View 
@@ -215,6 +248,7 @@ const ItemList:FC<NativeStackScreenProps<NavigationParamsList,'ItemListScreen'>>
 
   return (
     <View style={styles.container}>
+        {sortItemVisible&&<TouchableOpacity onPress={()=>setSortItemVisible(false)} style={styles.sortMainContainer}/>}
         <View style={[styles.header,{borderBottomWidth:isTitleEditable?1:0}]}>
           {isTitleEditable?(
             <TextInput
@@ -238,11 +272,78 @@ const ItemList:FC<NativeStackScreenProps<NavigationParamsList,'ItemListScreen'>>
           </TouchableOpacity>
       </View>
 
+      <View style={styles.actionContainer}>
+          <View>
+            {todoItem.length>0&&(
+              <TouchableOpacity 
+                accessibilityLabel='todo-sort-button'
+                onPress={()=>setSortItemVisible(true)}
+                style={styles.sortButtonContainer}>
+                <Image source={ArraowsSort}/>
+              </TouchableOpacity>
+            )}
+            {sortItemVisible&& (
+              <View style={styles.sortContainer}>
+              <TouchableOpacity 
+                accessibilityLabel='sort-selection'
+                onPress={()=>onShortItem('latest')} style={styles.sortSelectionItem}>
+                <View style={{flex:1,flexDirection:'row',alignItems:'center'}}>
+                  <Image source={sortLastedIcon}/>
+                  <Text style={styles.sortSelectionTitle}>Terbaru</Text>
+                </View>
+                {sortSelected == 'latest' && (<Image source={sortSelectedIcon} />)}
+              </TouchableOpacity>
+              <TouchableOpacity 
+                accessibilityLabel='sort-selection'
+                onPress={()=>onShortItem('oldest')} style={styles.sortSelectionItem}>
+                <View style={{flex:1,flexDirection:'row',alignItems:'center'}}>
+                  <Image source={sortOldestIcon}/>
+                  <Text style={styles.sortSelectionTitle}>Terlama</Text>
+                </View>
+                {sortSelected == 'oldest' && (<Image source={sortSelectedIcon} />)}
+              </TouchableOpacity>
+              <TouchableOpacity 
+                accessibilityLabel='sort-selection'
+                onPress={()=>onShortItem('a-z')} style={styles.sortSelectionItem}>
+                <View style={{flex:1,flexDirection:'row',alignItems:'center'}}>
+                  <Image source={sortAzIcon}/>
+                  <Text style={styles.sortSelectionTitle}>A-Z</Text>
+                </View>
+                {sortSelected == 'a-z' && (<Image source={sortSelectedIcon} />)}
+              </TouchableOpacity>
+              <TouchableOpacity 
+                accessibilityLabel='sort-selection'
+                onPress={()=>onShortItem('z-a')} style={styles.sortSelectionItem}>
+                <View style={{flex:1,flexDirection:'row',alignItems:'center'}}>
+                  <Image source={sortZaIcon}/>
+                  <Text style={styles.sortSelectionTitle}>Z-A</Text>
+                </View>
+                {sortSelected == 'z-a' && (<Image source={sortSelectedIcon} />)}
+              </TouchableOpacity>
+              <TouchableOpacity 
+                accessibilityLabel='sort-selection'
+                onPress={()=>onShortItem('not_finished_yet')} style={styles.sortSelectionItem}>
+                <View style={{flex:1,flexDirection:'row',alignItems:'center'}}>
+                  <Image source={sortnotFinishedYetIcon}/>
+                  <Text style={styles.sortSelectionTitle}>Belum Selesai</Text>
+                </View>
+                {sortSelected == 'not_finished_yet' && (<Image source={sortSelectedIcon} />)}
+              </TouchableOpacity>
+          </View>
+            )}
+          </View>
+
+          <AddButton 
+            onPress={onAddNewItem}
+            disabled={todoItem.length === 10}
+            accessibilityLabel='activity-add-button'/>
+      </View>
+
       <FlatList
         contentContainerStyle={{flex:1,paddingHorizontal:20,}} 
         data={todoItem}
         renderItem={RenderItem}
-        ListHeaderComponent={HeaderComponent}
+        // ListHeaderComponent={HeaderComponent}
         ListEmptyComponent={EmtyComponent}/>
 
       <AlertActivity ref={toast} duration={800}/>
@@ -275,6 +376,16 @@ const styles = StyleSheet.create({
     paddingTop:23,
     flex:1,
   },
+  sortButtonContainer:{
+    height:38,
+    width:38,
+    borderWidth:1,
+    borderColor:'#E5E5E5',
+    borderRadius:45,
+    justifyContent:'center',
+    alignItems:'center',
+    marginHorizontal:8,        
+},
   header:{
     borderColor:"#D8D8D8",
     flexDirection:'row',
@@ -296,7 +407,9 @@ const styles = StyleSheet.create({
     flexDirection:'row',
     justifyContent:'flex-end',
     paddingTop:24,
-    paddingBottom:28
+    paddingBottom:28,
+    paddingHorizontal:20,
+    alignItems:'center'
   },
   emtyComponentContainer:{
     flex:1,
@@ -331,16 +444,52 @@ const styles = StyleSheet.create({
     shadowRadius: 3.84,
 
     elevation: 5,
-},
-todoItemPriorityIndicator:{
-    height:5,
-    width:5, 
-    borderRadius:5,
-    marginHorizontal:14,
-},
-todoItemTitle:{
+  },
+  todoItemPriorityIndicator:{
+      height:5,
+      width:5, 
+      borderRadius:5,
+      marginHorizontal:14,
+  },
+  todoItemTitle:{
+      fontFamily:'Poppins-Medium',
+      color:'#111111',
+      marginRight:8,
+  },
+  sortMainContainer:{
+    position:'absolute',
+    width,
+    height,    
+    top:0,
+    right:0,
+    left:0,
+    bottom:0,
+    zIndex:90,
+  },
+  sortContainer:{
+    borderRadius:6,
+    position:'absolute',
+    bottom:-42*5,
+    right: 8,
+    zIndex:99,
+    borderWidth:1,
+    backgroundColor:'#FFFFFF',
+    borderColor:'#E5E5E5'
+  },
+  sortSelectionItem:{
+    height:41,
+    width:180,
+    borderWidth:1,
+    backgroundColor:'#FFFFFF',
+    borderColor:'#E5E5E5',
+    flexDirection:'row',
+    alignItems:'center',
+    paddingHorizontal:16
+  },
+  sortSelectionTitle:{
+    fontSize:14,
     fontFamily:'Poppins-Medium',
-    color:'#111111',
-    marginRight:8,
-}
+    color:'#4A4A4A',
+    marginLeft:13
+  }
 })

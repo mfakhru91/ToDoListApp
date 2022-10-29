@@ -1,9 +1,37 @@
-import { Dimensions, Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
-import React from 'react'
+import { Animated, Dimensions, Easing, Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
+import React, { useEffect, useRef } from 'react'
 import { DeleteModalProps } from './DeleteModalProps'
 import { ModalDeleteIcon } from '../../assets'
 const {width,height} = Dimensions.get('window')
 const index = (props:DeleteModalProps) => {
+
+    const fadeIn = useRef(new Animated.Value(0)).current
+
+    const HandleFadeIn = () => {
+        Animated.timing(fadeIn,{
+            toValue:1,
+            duration:500,
+            easing:Easing.ease,
+            useNativeDriver:true
+        }).start()
+    }
+
+    useEffect(() => {
+        fadeIn.setValue(0)
+        if (props.visible) {
+            HandleFadeIn()
+        }
+        return()=>{
+            HandleFadeIn()
+        }
+    }, [[props.visible]])
+    
+
+    const traslateY = fadeIn.interpolate({
+        inputRange:[0,1],
+        outputRange:[height, 0],
+        extrapolate:'clamp'
+    })
 
     const Title = () => {
         const reg = /\(([^)]+)\)/;
@@ -20,7 +48,7 @@ const index = (props:DeleteModalProps) => {
             transparent
             {...props}>
             <View style={styles.modalContainer}>
-                <View style={styles.cardContainer}>
+                <Animated.View style={[styles.cardContainer,{transform:[{translateY:traslateY}]}]}>
                     <ModalDeleteIcon accessibilityLabel="modal-delete-icon" />
                     <Title/>  
 
@@ -39,7 +67,7 @@ const index = (props:DeleteModalProps) => {
                         </TouchableOpacity>
                     </View>
 
-                </View>
+                </Animated.View>
             </View>
         </Modal>
     )
